@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import net.minidev.json.annotate.JsonIgnore;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
@@ -34,6 +35,7 @@ public class LearningParty {
     private String email;
     @Column(nullable = false)
     @NotBlank @NotNull
+    @JsonIgnore
     private String password;
     private boolean enabled;
     @CreationTimestamp
@@ -41,6 +43,8 @@ public class LearningParty {
 
     @OneToMany(cascade = CascadeType.PERSIST)
     private List<Authority> authorities;
+    @JsonIgnore
+    private String token;
 
     public LearningParty
             (String email, String password, Authority authority){

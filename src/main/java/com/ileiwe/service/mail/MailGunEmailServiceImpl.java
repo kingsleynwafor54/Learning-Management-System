@@ -28,7 +28,7 @@ public class MailGunEmailServiceImpl implements EmailService {
                     .field("from", message.getFrom())
                     .field("to", message.getTo())
                     .field("subject", message.getSubject())
-                    .field("text", message.getBody())
+                    .field("html", message.getBody())
                     .asJson();
 //return null;
             return request.getStatus() == 200 ? new MailResponse(true) : new MailResponse(false);
