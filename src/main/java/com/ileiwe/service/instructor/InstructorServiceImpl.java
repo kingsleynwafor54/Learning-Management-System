@@ -6,9 +6,15 @@ import com.ileiwe.data.model.Instructor;
 import com.ileiwe.data.model.LearningParty;
 import com.ileiwe.data.model.Role;
 import com.ileiwe.data.repository.InstructorRepository;
+import com.ileiwe.data.repository.LearningPartyRepository;
+import com.ileiwe.service.exception.UserAlreadyExistsException;
+import com.ileiwe.service.mail.event.ApplicationEventListener;
+import com.ileiwe.service.mail.event.OnRegistrationCompleteEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 //import org.springframework.context.annotation.Bean;
 //import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -19,32 +25,44 @@ import org.springframework.stereotype.Service;
  */
 
 @Service
-public class InstructorServiceImpl implements InstructorService{
+public class InstructorServiceImpl implements InstructorService {
 
     @Autowired
     InstructorRepository instructorRepository;
+    //InstructorPartyDto instructorPartyDto;
+    @Autowired
+    BCryptPasswordEncoder passwordEncoder;
+    @Autowired
+    LearningPartyRepository learningPartyRepository;
 
-    InstructorPartyDto instructorPartyDto;
-//    BCryptPasswordEncoder passwordEncoder;
+    @Autowired
+    ApplicationEventPublisher eventPublisher;
 
     @Override
-    public Instructor save(InstructorPartyDto instructorDto) {
+    public Instructor save(InstructorPartyDto instructorDto) throws UserAlreadyExistsException {
 
 
-        if(instructorDto == null){
+        if (instructorDto == null) {
             throw new IllegalArgumentException("Instructor cannot be null");
         }
-        LearningParty learningParty
-                = new LearningParty(instructorDto.getEmail()
-//                            ,passwordEncoder.encode(instructorDto.getPassword())
-                ,instructorDto.getPassword()
-                        , new Authority(Role.ROLE_INSTRUCTOR));
+        if (learningPartyRepository.findByEmail(instructorDto.getEmail()) == null) {
+            LearningParty learningParty
+                    = new LearningParty(instructorDto.getEmail()
+                    , passwordEncoder.encode(instructorDto.getPassword())
+                    , new Authority(Role.ROLE_INSTRUCTOR));
 
-        Instructor instructor = Instructor.builder()
-                .lastname(instructorDto.getLastname())
-                .firstname(instructorDto.getFirstname())
-                .learningParty(learningParty).build();
+            Instructor instructor = Instructor.builder()
+                    .lastname(instructorDto.getLastname())
+                    .firstname(instructorDto.getFirstname())
+                    .learningParty(learningParty).build();
+            eventPublisher.publishEvent(new OnRegistrationCompleteEvent(learningParty));
 
-       return instructorRepository.save(instructor);
+        return instructorRepository.save(instructor);
+        }
+    else {
+            throw new UserAlreadyExistsException("user with email" + instructorDto.getEmail()
+                    + "already exists");
+        }
+
     }
 }
